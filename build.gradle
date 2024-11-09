@@ -1,0 +1,18 @@
+plugins {
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.symbol.processing) apply false
+    id 'com.adarshr.test-logger' version '4.0.0' apply(false)
+    id 'com.linecorp.gradle.license-git' version '0.1.0' apply(false)
+}
+
+subprojects {
+    apply plugin: 'com.adarshr.test-logger'
+//    apply plugin: 'com.linecorp.gradle.license-git'
+
+//    license {
+//        header = project.rootProject.file('.LICENSE_SHORT')
+//        inceptionYear = 2024
+//
+//        includePatterns = ['**/*.java','**/*.kt'] as Set
+//    }
+}

@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.kotlin/
+
+.classpath
+.project
+.settings
+
+.sdkmanrc
+
+build
+bin
+
+hs_err*log

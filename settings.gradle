@@ -1,0 +1,39 @@
+plugins {
+    id("org.danilopianini.gradle-pre-commit-git-hooks") version "2.0.13"
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = "JaKsB"
+include ':processor'
+
+// See https://github.com/DanySK/gradle-pre-commit-git-hooks
+gitHooks { extension ->
+    extension.with {
+        commitMsg { context ->
+            context.with {
+                conventionalCommits { conventionalCommits ->
+                    conventionalCommits.with {
+                        defaultTypes()
+                        types("deps")
+                    }
+                }
+            }
+        }
+        preCommit { context ->
+            context.with {
+                from(settingsDir.toPath().resolve(".hooks").resolve("pre-commit-ktlint-format").toFile())
+//                tasks("licenseFormat", [] as String[], true)
+                tasks("clean", ["build"] as String[], true)
+                appendScript {
+                    'docker run --rm -v $(pwd):/repo --workdir /repo rhysd/actionlint:1.7.4 -color'
+                }
+            }
+        }
+        createHooks(true)
+    }
+}
