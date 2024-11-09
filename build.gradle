@@ -7,12 +7,12 @@ plugins {
 
 subprojects {
     apply plugin: 'com.adarshr.test-logger'
-//    apply plugin: 'com.linecorp.gradle.license-git'
+    apply plugin: 'com.linecorp.gradle.license-git'
 
-//    license {
-//        header = project.rootProject.file('.LICENSE_SHORT')
-//        inceptionYear = 2024
-//
-//        includePatterns = ['**/*.java','**/*.kt'] as Set
-//    }
+    license {
+        header = project.rootProject.file('.LICENSE_SHORT')
+        inceptionYear = 2024
+
+        includePatterns = ['**/*.java','**/*.kt'] as Set
+    }
 }
