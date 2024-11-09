@@ -18,6 +18,7 @@ dependencies {
     implementation libs.jakarta.xml
 
     testImplementation libs.kotlin.compiler.tester
+    testImplementation libs.kotlin.compiler.tester.ksp
 }
 
 ktlint {
