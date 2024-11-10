@@ -17,6 +17,7 @@
 
 package io.github.guicamest.jaksb.processor
 
+import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK
 import com.tschuchort.compiletesting.SourceFile
@@ -73,7 +74,50 @@ class BuilderProcessorTest {
             """,
         )
     }
+
+    @Test
+    fun `generate builder with configuration parameter when there are no required fields`() {
+        assertGeneratedFile(
+            sourceFileName = "DocumentNoneRequired.java",
+            source = """
+                package a.b.c;
+                import jakarta.xml.bind.annotation.XmlAccessType;
+                import jakarta.xml.bind.annotation.XmlAccessorType;
+                import jakarta.xml.bind.annotation.XmlElement;
+                import jakarta.xml.bind.annotation.XmlType;
+
+                @XmlAccessorType(XmlAccessType.FIELD)
+                @XmlType(name = "DocumentNoneRequired", propOrder = {
+                    "name",
+                    "age"
+                })
+                public class DocumentNoneRequired {
+
+                    @XmlElement(name = "Name")
+                    protected String name;
+
+                    @XmlElement(name = "Age")
+                    protected Integer age;
+                }
+            """,
+            expectedGeneratedResultFileName = "a/b/c/DocumentNoneRequired.kt",
+            expectedGeneratedSource = """
+                package a.b.c
+
+                import kotlin.Unit
+
+                public fun DocumentNoneRequired(configure: DocumentNoneRequired.() -> Unit = {}): DocumentNoneRequired = DocumentNoneRequired().apply {
+                    configure()
+                }
+            """,
+        )
+    }
 }
+
+data class TestSourceFile(
+    val filename: String,
+    val content: String,
+)
 
 private fun assertGeneratedFile(
     sourceFileName: String,
@@ -81,6 +125,22 @@ private fun assertGeneratedFile(
     expectedGeneratedResultFileName: String,
     @Language("kotlin") expectedGeneratedSource: String,
 ) {
+    val (result, kspSourcesDir) =
+        compile(
+            TestSourceFile(sourceFileName, source),
+        )
+    assertThat(result.exitCode).isEqualTo(OK)
+
+    val generated =
+        File(
+            kspSourcesDir,
+            "kotlin/$expectedGeneratedResultFileName",
+        )
+    assertThat(generated).exists()
+    assertThat(generated.readText().trim()).isEqualTo(expectedGeneratedSource.trimIndent())
+}
+
+private fun compile(testSourceFile: TestSourceFile): Pair<JvmCompilationResult, File> {
     val compilation =
         KotlinCompilation().apply {
             inheritClassPath = true
@@ -90,22 +150,12 @@ private fun assertGeneratedFile(
 
             sources =
                 listOf(
-                    SourceFile.java(sourceFileName, source),
+                    SourceFile.java(testSourceFile.filename, testSourceFile.content),
                 )
             symbolProcessorProviders =
                 mutableListOf(
                     BuilderProcessorProvider(),
                 )
         }
-    assertThat(compilation.compile().exitCode).isEqualTo(OK)
-
-    val generated =
-        File(
-            compilation.kspSourcesDir,
-            "kotlin/$expectedGeneratedResultFileName",
-        )
-    assertThat(generated).exists()
-    assertThat(
-        generated.readText().trim(),
-    ).isEqualTo(expectedGeneratedSource.trimIndent())
+    return compilation.compile() to compilation.kspSourcesDir
 }
