@@ -78,6 +78,17 @@ class BuilderProcessor(
                 .addOriginatingKSFile(classDeclaration.containingFile!!)
         requiredFields.forEach { builderFunction.addParameter(it) }
 
+        val funBody =
+            buildString {
+                appendLine("return %T().apply {")
+                requiredFields.forEach { field ->
+                    val name = field.name
+                    appendLine("    this.$name = $name")
+                }
+                appendLine("    configure()")
+                appendLine("}")
+            }
+
         FileSpec
             .builder(packageName, onlyName)
             .addFunction(
@@ -85,12 +96,7 @@ class BuilderProcessor(
                     .addParameter(buildConfigureParameter(classDeclaration))
                     .returns(fqName)
                     .addStatement(
-                        """
-                        return %T().apply {
-                            this.name = name
-                            configure()
-                        }
-                        """.trimIndent(),
+                        funBody.trimIndent(),
                         fqName,
                     ).build(),
             ).build()
