@@ -20,11 +20,14 @@ package io.github.guicamest.jaksb.processor
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspLoggingLevels
 import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspWithCompilation
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import org.assertj.core.api.Assertions.assertThat
 import org.intellij.lang.annotations.Language
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -56,14 +59,14 @@ class BuilderProcessorTest {
                     protected Integer age;
                 }
             """,
-            expectedGeneratedResultFileName = "Document.kt",
+            expectedGeneratedResultFileName = "a/b/c/Document.kt",
             expectedGeneratedSource = """
                 package a.b.c
 
-                fun Document(
-                    name: String,
-                    configure: Document.() -> Unit = {}
-                ) = Document().apply {
+                import kotlin.String
+                import kotlin.Unit
+
+                public fun Document(name: String, configure: Document.() -> Unit = {}): Document = Document().apply {
                     this.name = name
                     configure()
                 }
@@ -82,6 +85,8 @@ private fun assertGeneratedFile(
         KotlinCompilation().apply {
             inheritClassPath = true
             kspWithCompilation = true
+            kspLoggingLevels = setOf(CompilerMessageSeverity.INFO)
+            useKsp2()
 
             sources =
                 listOf(
@@ -101,6 +106,6 @@ private fun assertGeneratedFile(
         )
     assertThat(generated).exists()
     assertThat(
-        generated.readText(),
+        generated.readText().trim(),
     ).isEqualTo(expectedGeneratedSource.trimIndent())
 }
