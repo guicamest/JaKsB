@@ -50,33 +50,20 @@ class BuilderProcessor(
         return emptyList()
     }
 
-    private fun generateBuilderFileSpecs(type: KSClassDeclaration) {
-        val fqName = type.toClassName()
-        val fqType = type.asType(emptyList()).toTypeName()
+    private fun generateBuilderFileSpecs(classDeclaration: KSClassDeclaration) {
+        val fqName = classDeclaration.toClassName()
         val packageName = fqName.packageName
         val onlyName = fqName.simpleName
-
-        val configureType: TypeName =
-            LambdaTypeName.get(
-                receiver = fqType,
-                returnType = typeNameOf<Unit>(),
-            )
-
-        val configureLambdaParameter =
-            ParameterSpec
-                .builder("configure", configureType)
-                .defaultValue("{}")
-                .build()
 
         FileSpec
             .builder(packageName, onlyName)
             .addFunction(
                 FunSpec
                     .builder(onlyName)
-                    .addOriginatingKSFile(type.containingFile!!)
+                    .addOriginatingKSFile(classDeclaration.containingFile!!)
                     .addParameter("name", String::class)
-                    .addParameter(configureLambdaParameter)
-                    .returns(fqType)
+                    .addParameter(buildConfigureParameter(classDeclaration))
+                    .returns(fqName)
                     .addStatement(
                         """
                         return %T().apply {
@@ -104,5 +91,19 @@ class BuilderProcessor(
         logger.logging("Found ${enums.size} classes @ with XmlEnum")
         logger.logging("Found ${nonEnums.size} classes @ with XmlType (non-enum)")
         return nonEnums.toSet()
+    }
+
+    private fun buildConfigureParameter(classDeclaration: KSClassDeclaration): ParameterSpec {
+        val fqType = classDeclaration.asType(emptyList()).toTypeName()
+        val configureType: TypeName =
+            LambdaTypeName.get(
+                receiver = fqType,
+                returnType = typeNameOf<Unit>(),
+            )
+
+        return ParameterSpec
+            .builder("configure", configureType)
+            .defaultValue("{}")
+            .build()
     }
 }
