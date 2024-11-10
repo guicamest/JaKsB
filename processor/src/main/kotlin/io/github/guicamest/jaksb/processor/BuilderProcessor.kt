@@ -16,6 +16,7 @@
 package io.github.guicamest.jaksb.processor
 
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -34,6 +35,7 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import com.squareup.kotlinpoet.typeNameOf
+import jakarta.xml.bind.annotation.XmlElement
 import jakarta.xml.bind.annotation.XmlEnum
 import jakarta.xml.bind.annotation.XmlType
 
@@ -50,18 +52,36 @@ class BuilderProcessor(
         return emptyList()
     }
 
+    @OptIn(KspExperimental::class)
     private fun generateBuilderFileSpecs(classDeclaration: KSClassDeclaration) {
         val fqName = classDeclaration.toClassName()
         val packageName = fqName.packageName
         val onlyName = fqName.simpleName
 
+        val requiredFields =
+            classDeclaration
+                .getAllProperties()
+                .filter { ksPropertyDeclaration ->
+                    val annotationsByType = ksPropertyDeclaration.getAnnotationsByType(XmlElement::class)
+                    annotationsByType.firstOrNull()?.required == true
+                }.map { property ->
+                    ParameterSpec
+                        .builder(
+                            name = property.simpleName.asString(),
+                            type = property.type.toTypeName(),
+                        ).build()
+                }
+
+        val builderFunction =
+            FunSpec
+                .builder(onlyName)
+                .addOriginatingKSFile(classDeclaration.containingFile!!)
+        requiredFields.forEach { builderFunction.addParameter(it) }
+
         FileSpec
             .builder(packageName, onlyName)
             .addFunction(
-                FunSpec
-                    .builder(onlyName)
-                    .addOriginatingKSFile(classDeclaration.containingFile!!)
-                    .addParameter("name", String::class)
+                builderFunction
                     .addParameter(buildConfigureParameter(classDeclaration))
                     .returns(fqName)
                     .addStatement(
