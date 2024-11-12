@@ -46,7 +46,7 @@ import kotlin.reflect.KClass
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("BuilderProcessor should")
-class BuilderProcessorTest {
+class CanGenerateFilesForBasicTypesTest {
     // https://en.wikipedia.org/wiki/Jakarta_XML_Binding#Default_data_type_bindings
     private fun propertyTypes() =
         Stream.of(
