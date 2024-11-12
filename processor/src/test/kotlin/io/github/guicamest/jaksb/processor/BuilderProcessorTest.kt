@@ -32,12 +32,39 @@ import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import java.io.File
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.util.stream.Stream
+import javax.xml.datatype.Duration
+import javax.xml.datatype.XMLGregorianCalendar
+import kotlin.reflect.KClass
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("BuilderProcessor should")
 class BuilderProcessorTest {
-    @Test
-    fun `generate builder with one required property and a configuration parameter`() {
+    // https://en.wikipedia.org/wiki/Jakarta_XML_Binding#Default_data_type_bindings
+    private fun propertyTypes() =
+        Stream.of(
+            String::class,
+            BigDecimal::class,
+            BigInteger::class,
+            XMLGregorianCalendar::class,
+            Duration::class,
+        )
+
+    @ParameterizedTest
+    @MethodSource("propertyTypes")
+    fun `generate builder with one required property and a configuration parameter`(propertyType: KClass<*>) {
+        val propertyQualifiedName = propertyType.qualifiedName // kotlin.String
+        val javaName =
+            propertyType.simpleName.takeIf {
+                propertyType.qualifiedName?.startsWith("kotlin") ?: false
+            } ?: propertyQualifiedName // String
+
         assertGeneratedFile(
             sourceFileName = "Document.java",
             source = """
@@ -54,7 +81,7 @@ class BuilderProcessorTest {
                 public class Document {
 
                     @XmlElement(name = "Name", required = true)
-                    protected String name;
+                    protected $javaName name;
 
                     @XmlElement(name = "Age")
                     protected Integer age;
@@ -64,10 +91,10 @@ class BuilderProcessorTest {
             expectedGeneratedSource = """
                 package a.b.c
 
-                import kotlin.String
+                import $propertyQualifiedName
                 import kotlin.Unit
 
-                public fun Document(name: String, configure: Document.() -> Unit = {}): Document = Document().apply {
+                public fun Document(name: ${propertyType.simpleName}, configure: Document.() -> Unit = {}): Document = Document().apply {
                     this.name = name
                     configure()
                 }
