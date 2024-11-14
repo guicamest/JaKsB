@@ -89,4 +89,73 @@ class CanGenerateFilesForXmlGeneratedTypesTest {
             """,
         )
     }
+
+    @Test
+    fun `generate builder with one required enum property and a configuration parameter`() {
+        assertGeneratedFile(
+            testSourceFiles =
+                arrayOf(
+                    TestSourceFile(
+                        filename = "Agree.java",
+                        content = """
+                    package a.b.c;
+
+                    import jakarta.xml.bind.annotation.XmlEnum;
+                    import jakarta.xml.bind.annotation.XmlType;
+
+                    @XmlType(name = "Agree")
+                    @XmlEnum
+                    public enum Agree {
+
+                        Y,
+                        N;
+
+                        public String value() {
+                            return name();
+                        }
+
+                        public static Agree fromValue(String v) {
+                            return valueOf(v);
+                        }
+                     }
+                """,
+                    ),
+                    TestSourceFile(
+                        filename = "Document.java",
+                        content = """
+                    package a.b.c;
+                    import jakarta.xml.bind.annotation.XmlAccessType;
+                    import jakarta.xml.bind.annotation.XmlAccessorType;
+                    import jakarta.xml.bind.annotation.XmlElement;
+                    import jakarta.xml.bind.annotation.XmlType;
+
+                    @XmlAccessorType(XmlAccessType.FIELD)
+                    @XmlType(name = "Document", propOrder = {
+                        "name",
+                        "agree",
+                    })
+                    public class Document {
+
+                        @XmlElement(name = "Name")
+                        protected String name;
+
+                        @XmlElement(name = "Agree", required = true)
+                        protected Agree agree;
+                    }
+                """,
+                    ),
+                ),
+            expectedGeneratedResultFileName = "a/b/c/Document.kt",
+            expectedGeneratedSource = """
+                package a.b.c
+
+                import kotlin.Unit
+
+                public fun Document(agree: Agree, configure: Document.() -> Unit = {}): Document = Document().apply {
+                    this.agree = agree
+                    configure()
+                }
+            """,
+        )
+    }
 }
