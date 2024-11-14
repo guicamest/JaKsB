@@ -181,4 +181,50 @@ class CanGenerateFilesForBasicTypesTest {
             """,
         )
     }
+
+    @Test
+    fun `generate builder with all required properties and a configuration parameter`() {
+        assertGeneratedFile(
+            sourceFileName = "DocumentAllRequired.java",
+            source = """
+                package a.b.c;
+                import jakarta.xml.bind.annotation.XmlAccessType;
+                import jakarta.xml.bind.annotation.XmlAccessorType;
+                import jakarta.xml.bind.annotation.XmlElement;
+                import jakarta.xml.bind.annotation.XmlType;
+
+                @XmlAccessorType(XmlAccessType.FIELD)
+                @XmlType(name = "DocumentAllRequired", propOrder = {
+                    "name",
+                    "age"
+                })
+                public class DocumentAllRequired {
+
+                    @XmlElement(name = "Name", required = true)
+                    protected String name;
+
+                    @XmlElement(name = "Age", required = true)
+                    protected Integer age;
+                }
+            """,
+            expectedGeneratedResultFileName = "a/b/c/DocumentAllRequired.kt",
+            expectedGeneratedSource = """
+                package a.b.c
+
+                import kotlin.Int
+                import kotlin.String
+                import kotlin.Unit
+
+                public fun DocumentAllRequired(
+                  name: String,
+                  age: Int,
+                  configure: DocumentAllRequired.() -> Unit = {},
+                ): DocumentAllRequired = DocumentAllRequired().apply {
+                    this.name = name
+                    this.age = age
+                    configure()
+                }
+            """,
+        )
+    }
 }
