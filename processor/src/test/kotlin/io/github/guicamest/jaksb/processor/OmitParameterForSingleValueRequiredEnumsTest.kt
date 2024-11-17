@@ -83,8 +83,8 @@ class OmitParameterForSingleValueRequiredEnumsTest {
                 import kotlin.Unit
 
                 public fun Document(configure: Document.() -> Unit = {}): Document = Document().apply {
-                    this.code = Code.SE_CRET
-                    configure()
+                  this.code = Code.SE_CRET
+                  configure()
                 }
             """,
         )

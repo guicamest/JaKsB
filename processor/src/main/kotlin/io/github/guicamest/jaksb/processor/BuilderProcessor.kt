@@ -25,6 +25,7 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.LambdaTypeName
@@ -44,16 +45,29 @@ class BuilderProcessor(
     private val logger: KSPLogger,
 ) : SymbolProcessor {
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val xmlTypes = findClassesWithXmlType(resolver)
+        val (nonEnums, enums) = findClassesWithXmlType(resolver)
 
-        xmlTypes.forEach { type ->
-            generateBuilderFileSpecs(type)
+        nonEnums.forEach { type ->
+            generateBuilderFileSpecs(type, enums.filterTo(mutableSetOf(), ::singleValued))
         }
         return emptyList()
     }
 
+    private fun singleValued(ksClassDeclaration: KSClassDeclaration): Boolean {
+//        ksClassDeclaration.declarations.filterIsInstance<KSClassDeclaration>().forEach {
+//            it.toClassName() // a.b.c.Code.SE_CRET
+        return ksClassDeclaration.declarations.filterIsInstance<KSClassDeclaration>().count() == 1
+    }
+
     @OptIn(KspExperimental::class)
-    private fun generateBuilderFileSpecs(classDeclaration: KSClassDeclaration) {
+    private fun generateBuilderFileSpecs(
+        classDeclaration: KSClassDeclaration,
+        singleValuedEnums: Set<KSClassDeclaration>,
+    ) {
+        val findInSingleValueEnums = { p: ParameterSpec ->
+            singleValuedEnums.firstOrNull { it.asType(emptyList()).toTypeName() == p.type }
+        }
+        val isSingleValueEnumParameter = { p: ParameterSpec -> findInSingleValueEnums(p) != null }
         val fqName = classDeclaration.toClassName()
         val packageName = fqName.packageName
         val onlyName = fqName.simpleName
@@ -76,17 +90,29 @@ class BuilderProcessor(
             FunSpec
                 .builder(onlyName)
                 .addOriginatingKSFile(classDeclaration.containingFile!!)
-        requiredFields.forEach { builderFunction.addParameter(it) }
+        requiredFields.forEach {
+            if (!isSingleValueEnumParameter(it)) builderFunction.addParameter(it)
+        }
 
         val funBody =
-            buildString {
-                appendLine("return %T().apply {")
+            CodeBlock.builder().run {
+                beginControlFlow("return %T().apply", fqName)
                 requiredFields.forEach { field ->
                     val name = field.name
-                    appendLine("    this.$name = $name")
+                    when {
+                        isSingleValueEnumParameter(field) -> {
+                            val cname =
+                                findInSingleValueEnums(
+                                    field,
+                                )!!.declarations.filterIsInstance<KSClassDeclaration>().first().toClassName()
+                            addStatement("this.$name = %T", cname)
+                        }
+                        else -> addStatement("this.$name = $name")
+                    }
                 }
-                appendLine("    configure()")
-                appendLine("}")
+                addStatement("configure()")
+                endControlFlow()
+                build()
             }
 
         FileSpec
@@ -95,16 +121,16 @@ class BuilderProcessor(
                 builderFunction
                     .addParameter(buildConfigureParameter(classDeclaration))
                     .returns(fqName)
-                    .addStatement(
-                        funBody.trimIndent(),
-                        fqName,
-                    ).build(),
+                    .addCode(funBody)
+                    .build(),
             ).build()
             .writeTo(codeGenerator, Dependencies(true))
     }
 
     @OptIn(KspExperimental::class)
-    private fun findClassesWithXmlType(resolver: Resolver): Set<KSClassDeclaration> {
+    private fun findClassesWithXmlType(
+        resolver: Resolver,
+    ): Pair<Set<KSClassDeclaration>, List<KSClassDeclaration>> {
         val xmlTypes =
             resolver
                 .getSymbolsWithAnnotation(XmlType::class.qualifiedName.orEmpty())
@@ -116,7 +142,7 @@ class BuilderProcessor(
             }
         logger.logging("Found ${enums.size} classes @ with XmlEnum")
         logger.logging("Found ${nonEnums.size} classes @ with XmlType (non-enum)")
-        return nonEnums.toSet()
+        return (nonEnums.toSet() to enums)
     }
 
     private fun buildConfigureParameter(classDeclaration: KSClassDeclaration): ParameterSpec {

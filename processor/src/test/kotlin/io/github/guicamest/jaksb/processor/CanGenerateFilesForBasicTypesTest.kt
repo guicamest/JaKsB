@@ -81,8 +81,8 @@ class CanGenerateFilesForBasicTypesTest {
                 import kotlin.Unit
 
                 public fun Document(name: ${propertyType.simpleName}, configure: Document.() -> Unit = {}): Document = Document().apply {
-                    this.name = name
-                    configure()
+                  this.name = name
+                  configure()
                 }
             """,
         )
@@ -137,8 +137,8 @@ class CanGenerateFilesForBasicTypesTest {
                 import kotlin.Unit
 
                 public fun Document(name: ${kotlinType.simpleName}, configure: Document.() -> Unit = {}): Document = Document().apply {
-                    this.name = name
-                    configure()
+                  this.name = name
+                  configure()
                 }
             """,
         )
@@ -176,7 +176,7 @@ class CanGenerateFilesForBasicTypesTest {
                 import kotlin.Unit
 
                 public fun DocumentNoneRequired(configure: DocumentNoneRequired.() -> Unit = {}): DocumentNoneRequired = DocumentNoneRequired().apply {
-                    configure()
+                  configure()
                 }
             """,
         )
@@ -220,9 +220,9 @@ class CanGenerateFilesForBasicTypesTest {
                   age: Int,
                   configure: DocumentAllRequired.() -> Unit = {},
                 ): DocumentAllRequired = DocumentAllRequired().apply {
-                    this.name = name
-                    this.age = age
-                    configure()
+                  this.name = name
+                  this.age = age
+                  configure()
                 }
             """,
         )

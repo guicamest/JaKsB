@@ -83,8 +83,8 @@ class CanGenerateFilesForXmlGeneratedTypesTest {
                 import kotlin.Unit
 
                 public fun Document(address: Address, configure: Document.() -> Unit = {}): Document = Document().apply {
-                    this.address = address
-                    configure()
+                  this.address = address
+                  configure()
                 }
             """,
         )
@@ -152,8 +152,8 @@ class CanGenerateFilesForXmlGeneratedTypesTest {
                 import kotlin.Unit
 
                 public fun Document(agree: Agree, configure: Document.() -> Unit = {}): Document = Document().apply {
-                    this.agree = agree
-                    configure()
+                  this.agree = agree
+                  configure()
                 }
             """,
         )
