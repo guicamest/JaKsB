@@ -51,25 +51,15 @@ class BuilderProcessor(
         val (nonEnums, enums) = findClassesWithXmlType(resolver)
 
         nonEnums.forEach { type ->
-            generateBuilderFileSpecs(type, enums.filterTo(mutableSetOf(), ::singleValued))
+            generateBuilderFileSpecs(type, SingleValueEnums(declarations = enums))
         }
         return emptyList()
     }
 
-    private fun singleValued(ksClassDeclaration: KSClassDeclaration): Boolean {
-//        ksClassDeclaration.declarations.filterIsInstance<KSClassDeclaration>().forEach {
-//            it.toClassName() // a.b.c.Code.SE_CRET
-        return ksClassDeclaration.declarations.filterIsInstance<KSClassDeclaration>().count() == 1
-    }
-
     private fun generateBuilderFileSpecs(
         classDeclaration: KSClassDeclaration,
-        singleValuedEnums: Set<KSClassDeclaration>,
+        singleValuedEnums: SingleValueEnums,
     ) {
-        val findInSingleValueEnums = { p: ParameterSpec ->
-            singleValuedEnums.firstOrNull { it.asType(emptyList()).toTypeName() == p.type }
-        }
-        val isSingleValueEnumParameter = { p: ParameterSpec -> findInSingleValueEnums(p) != null }
         val fqName = classDeclaration.toClassName()
         val packageName = fqName.packageName
         val onlyName = fqName.simpleName
@@ -91,7 +81,7 @@ class BuilderProcessor(
                 .builder(onlyName)
                 .addOriginatingKSFile(classDeclaration.containingFile!!)
         requiredFields.forEach {
-            if (!isSingleValueEnumParameter(it)) builderFunction.addParameter(it)
+            if (singleValuedEnums.find(it.type) !is SingleValueEnum) builderFunction.addParameter(it)
         }
 
         val funBody =
@@ -99,14 +89,8 @@ class BuilderProcessor(
                 beginControlFlow("return %T().apply", fqName)
                 requiredFields.forEach { field ->
                     val name = field.name
-                    when {
-                        isSingleValueEnumParameter(field) -> {
-                            val cname =
-                                findInSingleValueEnums(
-                                    field,
-                                )!!.declarations.filterIsInstance<KSClassDeclaration>().first().toClassName()
-                            addStatement("this.$name = %T", cname)
-                        }
+                    when (val result = singleValuedEnums.find(field.type)) {
+                        is SingleValueEnum -> addStatement("this.$name = %T", result.onlyValue)
                         else -> addStatement("this.$name = $name")
                     }
                 }
@@ -161,5 +145,35 @@ class BuilderProcessor(
     private fun isRequiredXmlElement(ksPropertyDeclaration: KSPropertyDeclaration): Boolean {
         val annotationsByType = ksPropertyDeclaration.getAnnotationsByType(XmlElement::class)
         return annotationsByType.firstOrNull()?.required == true
+    }
+}
+
+sealed interface FindSingleValueEnumResult
+
+data object Other : FindSingleValueEnumResult
+
+data class SingleValueEnum(
+    val onlyValue: TypeName,
+) : FindSingleValueEnumResult
+
+class SingleValueEnums(
+    private val known: Map<TypeName, SingleValueEnum>,
+) {
+    fun find(type: TypeName): FindSingleValueEnumResult = known[type] ?: Other
+
+    companion object {
+        operator fun invoke(declarations: List<KSClassDeclaration>): SingleValueEnums =
+            SingleValueEnums(
+                declarations.fold(emptyMap()) { current, enumType ->
+                    val enumValues = enumType.declarations.filterIsInstance<KSClassDeclaration>()
+                    if (enumValues.count() != 1) return@fold current
+
+                    // .... to a.b.c.Code.SE_CRET
+                    val entryToAdd =
+                        enumType.asType(emptyList()).toTypeName() to
+                            SingleValueEnum(enumValues.first().toClassName())
+                    current + entryToAdd
+                },
+            )
     }
 }
