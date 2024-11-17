@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(KspExperimental::class)
+
 package io.github.guicamest.jaksb.processor
 
 import com.google.devtools.ksp.KspExperimental
@@ -25,6 +27,7 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -59,7 +62,6 @@ class BuilderProcessor(
         return ksClassDeclaration.declarations.filterIsInstance<KSClassDeclaration>().count() == 1
     }
 
-    @OptIn(KspExperimental::class)
     private fun generateBuilderFileSpecs(
         classDeclaration: KSClassDeclaration,
         singleValuedEnums: Set<KSClassDeclaration>,
@@ -75,10 +77,8 @@ class BuilderProcessor(
         val requiredFields =
             classDeclaration
                 .getAllProperties()
-                .filter { ksPropertyDeclaration ->
-                    val annotationsByType = ksPropertyDeclaration.getAnnotationsByType(XmlElement::class)
-                    annotationsByType.firstOrNull()?.required == true
-                }.map { property ->
+                .filter(::isRequiredXmlElement)
+                .map { property ->
                     ParameterSpec
                         .builder(
                             name = property.simpleName.asString(),
@@ -119,7 +119,7 @@ class BuilderProcessor(
             .builder(packageName, onlyName)
             .addFunction(
                 builderFunction
-                    .addParameter(buildConfigureParameter(classDeclaration))
+                    .addParameter(parameterSpecForConfigure(classDeclaration))
                     .returns(fqName)
                     .addCode(funBody)
                     .build(),
@@ -127,7 +127,6 @@ class BuilderProcessor(
             .writeTo(codeGenerator, Dependencies(true))
     }
 
-    @OptIn(KspExperimental::class)
     private fun findClassesWithXmlType(
         resolver: Resolver,
     ): Pair<Set<KSClassDeclaration>, List<KSClassDeclaration>> {
@@ -145,7 +144,7 @@ class BuilderProcessor(
         return (nonEnums.toSet() to enums)
     }
 
-    private fun buildConfigureParameter(classDeclaration: KSClassDeclaration): ParameterSpec {
+    private fun parameterSpecForConfigure(classDeclaration: KSClassDeclaration): ParameterSpec {
         val fqType = classDeclaration.asType(emptyList()).toTypeName()
         val configureType: TypeName =
             LambdaTypeName.get(
@@ -157,5 +156,10 @@ class BuilderProcessor(
             .builder("configure", configureType)
             .defaultValue("{}")
             .build()
+    }
+
+    private fun isRequiredXmlElement(ksPropertyDeclaration: KSPropertyDeclaration): Boolean {
+        val annotationsByType = ksPropertyDeclaration.getAnnotationsByType(XmlElement::class)
+        return annotationsByType.firstOrNull()?.required == true
     }
 }
