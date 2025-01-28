@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 guicamest
+ * Copyright 2024-2025 guicamest
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ class BuilderProcessor(
         singleValuedEnums: SingleValueEnums,
     ) {
         val fqName = classDeclaration.toClassName()
+        logger.info("Generating builder...", classDeclaration)
         val packageName = fqName.packageName
         val onlyName = fqName.simpleName
 
@@ -109,6 +110,7 @@ class BuilderProcessor(
                     .build(),
             ).build()
             .writeTo(codeGenerator, Dependencies(true))
+        logger.info("Generated builder", classDeclaration)
     }
 
     private fun findClassesWithXmlType(

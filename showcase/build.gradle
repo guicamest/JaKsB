@@ -1,0 +1,55 @@
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    id 'jvm-test-suite'
+    id 'jacoco'
+    alias(libs.plugins.ktlint.gradle)
+    id 'com.google.devtools.ksp'
+    id "app.cash.licensee" version "1.12.0"
+    id "com.github.bjornvester.xjc" version "1.8.2"
+}
+
+kotlin {
+    jvmToolchain(project.getProperties().getOrDefault("kotlin.jvmToolchain", 11) as Integer)
+}
+
+xjc {
+    xjcVersion.set(libs.versions.jakarta)
+}
+
+dependencies {
+    implementation libs.jakarta.xml
+    ksp project(":processor")
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+testing {
+    suites {
+        withType(JvmTestSuite).configureEach {
+            useJUnitJupiter('5.10.0')
+            dependencies {
+                implementation 'org.assertj:assertj-core:3.26.3'
+            }
+        }
+    }
+}
+
+tasks.withType(Test) {
+    jacoco.includes = ['io.github.guicamest.jaksb.*']
+}
+
+testlogger {
+    slowThreshold 1000
+}
+
+jacocoTestReport {
+    dependsOn test
+}
+
+licensee {
+    allow('Apache-2.0')
+    allowUrl('http://www.eclipse.org/org/documents/edl-v10.php') {
+        because 'Url is `http`. Correct is https://www.eclipse.org/org/documents/edl-v10.php, points to Eclipse Distribution License - v 1.0 / BSD-3-Clause'
+    }
+}

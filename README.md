@@ -1,7 +1,8 @@
 # JaKsB
 
-JaKsB is a library to ... via ksp(Kotlin Symbol Processing).
+JaKsB is a library to WIP via KSP(Kotlin Symbol Processing).
 
+## Usage
 Apply the ksp plugin and add the dependency in the module containing the JaxB classes:
 
 ```groovy
@@ -13,9 +14,6 @@ plugins {
 ```groovy
 ksp 'io.github.guicamest.jaksb:processor:{latest-version}'
 ```
-
-## Usage
-TODO
 
 ## Development
 

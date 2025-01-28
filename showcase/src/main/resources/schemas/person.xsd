@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:own="urn:io:github:guicamest:jaksb:showcase"
+           targetNamespace="urn:io:github:guicamest:jaksb:showcase"
+           elementFormDefault="qualified"
+           version="1.0">
+    <xs:element name="Person" type="own:Person"/>
+    <xs:simpleType name="DateTimeType">
+        <xs:restriction base="xs:dateTime"/>
+    </xs:simpleType>
+    <xs:simpleType name="Mood">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Happy"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="Agrees">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Y"/>
+            <xs:enumeration value="N"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="Person">
+        <xs:sequence>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="BirthDate" type="own:DateTimeType"/>
+            <xs:element name="Mood" type="own:Mood"/>
+            <xs:element name="Agrees" type="own:Agrees" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

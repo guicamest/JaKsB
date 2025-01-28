@@ -14,3 +14,6 @@ max_line_length = 110
 
 [*.{yml,yaml}]
 indent_size = 2
+
+[**/build/generated/**/*]
+ktlint = disabled
