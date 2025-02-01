@@ -1,0 +1,52 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+  ],
+  baseBranches: [
+    'main',
+  ],
+  assigneesFromCodeOwners: true,
+  rebaseWhen: 'behind-base-branch',
+  semanticCommitType: 'deps',
+  semanticCommitScope: '{{depName}}',
+  labels: [
+    'dependency',
+  ],
+  packageRules: [
+    {
+      matchManagers: [
+        'github-actions',
+      ],
+      semanticCommitType: 'ci',
+      commitMessageTopic: 'action',
+    },
+    {
+      matchManagers: [
+        'gradle',
+      ],
+      matchDepTypes: [
+        'plugin',
+      ],
+      semanticCommitType: 'build',
+      commitMessageTopic: 'plugin',
+    },
+    {
+      matchManagers: [
+        'gradle',
+      ],
+      matchDepTypes: [
+        'dependencies',
+      ],
+      semanticCommitType: 'deps',
+      commitMessageTopic: 'dependency',
+    },
+    {
+      groupName: 'kotlin plugins',
+      matchPackageNames: [
+        'com.google.devtools.ksp{/,}**',
+        'org.jetbrains.kotlin.jvm{/,}**',
+      ],
+    },
+  ],
+}
