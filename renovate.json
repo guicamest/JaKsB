@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "baseBranches": [
     "main"
@@ -10,7 +10,9 @@
   "rebaseWhen": "behind-base-branch",
   "semanticCommitType": "deps",
   "semanticCommitScope": "{{depName}}",
-  "labels": ["dependency"],
+  "labels": [
+    "dependency"
+  ],
   "packageRules": [
     {
       "matchManagers": [
@@ -41,9 +43,9 @@
     },
     {
       "groupName": "kotlin plugins",
-      "matchPackagePrefixes": [
-        "com.google.devtools.ksp",
-        "org.jetbrains.kotlin.jvm"
+      "matchPackageNames": [
+        "com.google.devtools.ksp{/,}**",
+        "org.jetbrains.kotlin.jvm{/,}**"
       ]
     }
   ]
