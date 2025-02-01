@@ -31,6 +31,9 @@ gitHooks { extension ->
                 appendScript {
                     'docker run --rm -v $(pwd):/repo --workdir /repo rhysd/actionlint:1.7.4 -color'
                 }
+                appendScript {
+                    'npx --yes --package renovate -- renovate-config-validator'
+                }
             }
         }
         createHooks(true)
