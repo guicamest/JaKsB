@@ -38,6 +38,13 @@
       ],
       "semanticCommitType": "deps",
       "commitMessageTopic": "dependency"
+    },
+    {
+      "groupName": "kotlin plugins",
+      "matchPackagePrefixes": [
+        "com.google.devtools.ksp",
+        "org.jetbrains.kotlin.jvm"
+      ]
     }
   ]
 }
