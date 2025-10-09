@@ -4,7 +4,7 @@ plugins {
     id 'jvm-test-suite'
     id 'jacoco'
     alias(libs.plugins.ktlint.gradle)
-    id "app.cash.licensee" version "1.12.0"
+    id "app.cash.licensee" version "1.14.1"
 }
 
 kotlin {
