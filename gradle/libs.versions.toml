@@ -1,7 +1,7 @@
 [versions]
-kotlin-plugins = "2.1.10"
+kotlin-plugins = "2.4.20"
 kotlin-poet = "2.0.0"
-ksp = "2.1.10-1.0.29"
+ksp = "2.3.12"
 ktlint = "1.4.0"
 jakarta = "4.0.2"
 kct = "0.7.0"
